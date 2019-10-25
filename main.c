@@ -5,51 +5,53 @@
 
 int main()
 {
+    char d1[10] = "<---p1--->";
+    char d2[10] = "<---p2--->";
+    char d3[10] = "<---p3--->";
+
     init();
-    dispData();
+    disp();
     
-    int p1 = myMalloc(10);
-    dispData();
-
-    int p2 = myMalloc(10);
-    int p3 = myMalloc(10);
-    dispData();
-
-    write(p1, 10, "<---p1--->");
-    write(p2, 10, "<---p2--->");
-    write(p3, 10, "<---p3--->");
-    dispData();
+    char * p1 = myMalloc(10);
+    char * p2 = myMalloc(10);
+    char * p3 = myMalloc(10);
+    disp();
+    
+    write(p1, "<===p1===>", 10);
+    write(p2, "<===p2===>", 10);
+    write(p3, "<===p3===>", 10);
+    disp();
 
     myFree(p2);
-    dispData();
-
-    int p4 = myMalloc(5);
-    dispData();
+    disp();
+    /*
+    char * p4 = myMalloc(5);
+    disp();
 
     write(p4, 5, "<p4->");
-    dispData();
+    disp();
 
-    defrag();
-    dispData();
+    // defrag();
+    disp();
     /*
     
     int p5 = myMalloc(2);
-    dispData();
+    disp();
 
     myFree(p4);
-    dispData();
+    disp();
     
     myFree(p5);
-    dispData();
+    disp();
 
     int p6 = myMalloc(5);
-    dispData();
+    disp();
 
     myFree(p6);
-    dispData();
+    disp();
 
     defrag();
-    dispData();
+    disp();
 
     //*/
     return 0;

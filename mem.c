@@ -3,33 +3,33 @@
 
 bool bInit = false;
 int freeSize = TOTAL_SIZE;
-char data[TOTAL_SIZE];
+char memory[TOTAL_SIZE];
 Bloc * firstBloc = NULL;
 
 void init()
 {
-    firstBloc = (Bloc *) malloc(sizeof(Bloc));
+    for (int i = 0; i < TOTAL_SIZE; i = i + 1)
+    {
+        memory[i] = '-';
+    }
+    
+    firstBloc = (Bloc *) &memory[0];
     firstBloc->alloc = false;
-    firstBloc->size = TOTAL_SIZE;
-    firstBloc->address = 0;
+    firstBloc->size = TOTAL_SIZE - sizeof(Bloc);
     firstBloc->prev = NULL;
     firstBloc->next = NULL;
     bInit = true;
-
-    for (int i = 0; i < TOTAL_SIZE; i = i + 1)
-    {
-        data[i] = '-';
-    }
 }
 
-void myMemCpy(int srcAdd, int destAdd, int size)
+void myMemCpy(void * src, void * dest, int len)
 {
-    for (int i = 0; i < size; i = i + 1)
+    for (int i = 0; i < len; i = i + 1)
     {
-        data[destAdd + i] = data[srcAdd + i];
+        *((char *)(dest + i)) = *((char *)(src + i));
     }
 }
 
+/*
 void defrag()
 {
     Bloc * prevFreeBloc = firstBloc;
@@ -58,22 +58,24 @@ void defrag()
     allocBloc->next->prev = newFreeBloc;
     allocBloc->next = newFreeBloc;
 }
+//*/
 
-int myMalloc(int size)
+void * myMalloc(int size)
 {
     if (!bInit) init();
 
     // Not enough free Size
-    if (freeSize < size) return -1;
+    // if (freeSize < size) return NULL;
 
     // Get first suited free Block
-    Bloc * freeBloc = firstBloc;
-    while (freeBloc != NULL && !(freeBloc->alloc == false && freeBloc->size > size))
+    Bloc * bloc = firstBloc;
+    while (bloc != NULL && !(bloc->alloc == false && bloc->size > size))
     {
-        freeBloc = freeBloc->next;
+        bloc = bloc->next;
     }
     // No free Block found
-    if (freeBloc == NULL)
+    if (bloc == NULL) return NULL;
+    /*
     {
         // Enough free Size
         if (freeSize >= size)
@@ -93,63 +95,47 @@ int myMalloc(int size)
         // Not enough Size
         else return -1;
     }
-
-    // Create new alloc Block
-    Bloc * newAllocBloc = (Bloc *) malloc(sizeof(Bloc));
-    newAllocBloc->alloc = true;
-    newAllocBloc->address = freeBloc->address;
-    newAllocBloc->size = size;
-    newAllocBloc->prev = freeBloc->prev;
-    freeSize = freeSize - size;
-
-    if (freeBloc->prev != NULL)
-    {
-        freeBloc->prev->next = newAllocBloc;
-    }
-    else // (freeBloc->prev == NULL)
-    {
-        firstBloc = newAllocBloc;
-    }
+    //*/
 
     // Still some place in Free Block
-    if (freeBloc->size > size)
+    if (bloc->size > size)
     {
-        newAllocBloc->next = freeBloc;
-        freeBloc->size = freeBloc->size - size;
-        freeBloc->address = freeBloc->address + size;
-        freeBloc->prev = newAllocBloc;
-    }
-    // Free Block totally used
-    else // (freeBloc->size == size)
-    {
-        newAllocBloc->next = freeBloc->next;
-        if (freeBloc->next != NULL)
-        {
-            freeBloc->next->prev = newAllocBloc;
-        }
-        free(freeBloc);
+        // Create new free Block
+        Bloc * newFreeBloc = bloc + sizeof(Bloc) + size;
+        newFreeBloc->alloc = false;
+        newFreeBloc->size = bloc->size - (sizeof(Bloc) + size);
+        newFreeBloc->prev = bloc;
+        newFreeBloc->next = bloc->next;
+
+        bloc->next = newFreeBloc;
+        bloc->size = size;
     }
 
-    return newAllocBloc->address;
+    // Alloc Block
+    bloc->alloc = true;
+    freeSize = freeSize - size;
+
+    return bloc + sizeof(Bloc);
 }
 
-void myFree(int address)
+void myFree(void * ptr)
 {
     // Find alloc Block
-    Bloc * allocBloc = firstBloc;
-    while (allocBloc != NULL && allocBloc->address != address)
+    Bloc * bloc = firstBloc;
+    while (bloc != NULL && bloc + sizeof(Bloc) != ptr)
     {
-        allocBloc = allocBloc->next;
+        bloc = bloc->next;
     }
     // Alloc Block not found
-    if (allocBloc == NULL) return;
-    // Requested Address is not allocated
-    if (allocBloc->alloc == false) return;
+    if (bloc == NULL) return;
+    // Requested Pointer is not allocated
+    if (bloc->alloc == false) return;
 
     // Free the Block
-    allocBloc->alloc = false;
-    freeSize = freeSize + allocBloc->size;
+    bloc->alloc = false;
+    // freeSize = freeSize + allocBloc->size;
     
+    /*
     Bloc * freeBloc;
     // If next Bloc is free
     if (allocBloc->next != NULL && allocBloc->next->alloc == false)
@@ -158,104 +144,64 @@ void myFree(int address)
         allocBloc->size = allocBloc->size + freeBloc->size;
         allocBloc->next = freeBloc->next;
         freeBloc->next->prev = allocBloc;
-        free(freeBloc);
     }
     // If prev Bloc is free
     if (allocBloc->prev != NULL && allocBloc->prev->alloc == false)
     {
         freeBloc = allocBloc->prev;
-        allocBloc->address = freeBloc->address;
+        allocBloc = freeBloc;
         allocBloc->size = allocBloc->size + freeBloc->size;
         allocBloc->prev = freeBloc->prev;
         freeBloc->prev->next = allocBloc;
-        free(freeBloc);
     }
+    //*/
 }
 
-void write(int address, int len, char * str)
+void write(void * ptr, char * str, int len)
 {
     // Find alloc Block
-    Bloc * allocBloc = firstBloc;
-    while (allocBloc != NULL && allocBloc->address != address)
+    Bloc * bloc = firstBloc;
+    while (bloc != NULL && bloc + sizeof(Bloc) != ptr)
     {
-        allocBloc = allocBloc->next;
+        bloc = bloc->next;
     }
     // Alloc Block not found
-    if (allocBloc == NULL) return;
-    // Requested Address is not allocated
-    if (allocBloc->alloc == false) return;
+    if (bloc == NULL) return;
+    // Requested Pointer is not allocated
+    if (bloc->alloc == false) return;
     // To long Message
-    if (len > allocBloc->size) return;
+    if (len > bloc->size) return;
 
     for (int i = 0; i < len; i = i + 1)
     {
-        data[address + i] = str[i];
+        *((char *)(ptr + i * sizeof(char))) = str[i];
     }
 }
 
-int read(int address, int offset)
+void disp()
 {
-    return data[address + offset];
-}
-
-void dispData()
-{
-    Bloc * bloc = firstBloc;
-    printf(" ");
-    while (bloc != NULL)
-    {
-        if (bloc->address < 10)
-        {
-            printf("0");
-        }
-        printf("%d", bloc->address);
-        for (int i = 0; i < bloc->size - 2; i = i + 1)
-        {
-            printf(" ");
-        }
-        bloc = bloc->next;
-    }
-    printf("\r\n");
-    printf("[");
-    bloc = firstBloc;
-    while (bloc != NULL)
-    {
-        for (int i = 0; i < bloc->size; i = i + 1)
-        {
-            printf("%c", data[bloc->address + i]);
-        }
-        bloc = bloc->next;
-    }
-    printf("]\r\n");
-    printf(" ");
-    bloc = firstBloc;
-    while (bloc != NULL)
-    {
-        for (int i = 0; i < bloc->size; i = i + 1)
-        {
-            if (bloc->alloc == false) printf("F");
-            else printf(" ");
-        }
-        bloc = bloc->next;
-    }
-    printf("\r\n");
-}
-
-void dispBlocs()
-{
+    int iBloc = 0;
+    void * ptr;
     Bloc * bloc = firstBloc;
     while (bloc != NULL)
     {
-        if (bloc->alloc == false)
+        printf("Bloc : %d\r\n", iBloc);
+        printf(" - address : %p\r\n", bloc);
+        printf(" - alloc : %d\r\n", bloc->alloc);
+        printf(" - size : %d\r\n", bloc->size);
+        printf(" - prev : %p\r\n", bloc->prev);
+        printf(" - next : %p\r\n", bloc->next);
+        ptr = bloc + sizeof(Bloc);
+        if (bloc->alloc == true)
         {
-            printf("Free Block :\r\n");
+            printf(" - data : [");
+            for (int i = 0; i < bloc->size; i = i + 1)
+            {
+                printf("%c", *((char *)(ptr + i * sizeof(char))));
+            }
+            printf("]\r\n");
         }
-        else // (bloc->alloc == 1)
-        {
-            printf("Alloc Block :\r\n");
-        }
-        printf(" - Address : %d\r\n", bloc->address);
-        printf(" - Size : %d\r\n", bloc->size);
         bloc = bloc->next;
+        iBloc = iBloc + 1;
     }
 }

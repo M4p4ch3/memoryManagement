@@ -5,7 +5,7 @@
 # include <stdlib.h>
 # include <stdio.h>
 
-# define TOTAL_SIZE 100
+# define TOTAL_SIZE 1000
 
 typedef int bool;
 # define true 1
@@ -14,7 +14,6 @@ typedef int bool;
 typedef struct Bloc
 {
     bool alloc;
-    int address;
     int size;
     struct Bloc * prev;
     struct Bloc * next;
@@ -25,11 +24,10 @@ void init();
 void defrag();
 
 // Public
-int myMalloc(int size);
-void myFree(int address);
-void write(int address, int len, char * str);
-int read(int address, int offset);
-void dispData();
-void dispBlocs();
+void * myMalloc(int size);
+void myFree(void * address);
+void write(void * address, char * str, int len);
+void myMemCpy(void * src, void * dest, int len);
+void disp();
 
 # endif // # if (!(defined(MEM_H)))
