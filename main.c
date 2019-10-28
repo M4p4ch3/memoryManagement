@@ -5,37 +5,37 @@
 
 int main()
 {
-    char * p1;
-    char * p2;
-    char * p3;
+    char * p[90];
     
     init();
-    p1 = myMalloc(10);
-    p2 = myMalloc(10);
-    p3 = myMalloc(10);
-    write(p1, "<===p1===>", 10);
-    write(p2, "<===p2===>", 10);
-    write(p3, "<===p3===>", 10);
-    myFree(p2);
-    myFree(p3);
+
+    p[0] = myMalloc(10);
+    write(p[0], "<===pi===>", 10);
+    p[1] = myMalloc(10);
+    write(p[1], "<===pi===>", 10);
     disp();
 
-    myFree(p1);
-    p1 = myMalloc(250);
-    p2 = myMalloc(250);
-    p3 = myMalloc(250);
-    write(p1, "<===p1======", 20);
-    write(p2, "<===p2======", 20);
-    write(p3, "<===p3======", 20);
-    myFree(p2);
-    disp();
-
-    p2 = myMalloc(300);
-    if (p2 != NULL)
+    /*
+    for (int i = 0; i < 30; i = i + 1)
     {
-        write(p2, "<===p2======", 20);
+        p[i] = myMalloc(10);
+        write(p[i], "<===pi===>", 10);
     }
     disp();
+    //*/
+
+    /*
+    for (int i = 0; i < 30; i = i + 2)
+    {
+        myFree(p[i]);
+    }
+    //*/
+
+    /*
+    disp();
+    p[89] = myMalloc(40);
+    disp();
+    //*/
 
     /*
     char * p4 = myMalloc(5);

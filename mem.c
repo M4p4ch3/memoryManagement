@@ -85,12 +85,11 @@ void mergeNext(block_t * block)
 void defrag()
 {
     block_t * block = firstBloc;
-    block_t * next;
-
+    
     while (block)
     {
         // Look for free Block followed by alloc Block
-        while (block && block->next &&
+        while (block != NULL && block->next != NULL &&
             !(block->alloc == false && block->next->alloc == true))
         {
             block = block->next;
@@ -98,22 +97,18 @@ void defrag()
 
         if (block->next)
         {
-            printf("defrag\r\n");
-            printf("block : %p\r\n", block);
-            next = block->next;
-            printf("next : %p\r\n", next);
             // Copy Data to prev Free Block
-            myMemCpy(BLOC_MEM(next), BLOC_MEM(block), next->dataSize);
+            myMemCpy(BLOC_MEM(block->next), BLOC_MEM(block), block->next->dataSize);
 
             // Switch Blocks data
-            unsigned int tempSize = next->dataSize;
-            next->alloc = false;
-            next->dataSize = block->dataSize;
+            unsigned int tempSize = block->next->dataSize;
+            block->next->alloc = false;
+            block->next->dataSize = block->dataSize;
             block->alloc = true;
             block->dataSize = tempSize;
 
             // Try to merge next free Block
-            mergeNext(next);
+            mergeNext(block->next);
         }
 
         block = block->next;
@@ -125,11 +120,11 @@ void * myMalloc(int size)
     if (!bInit) init();
 
     // Not enough free Size
-    if (freeSize < size) return NULL;
+    if (freeSize < size + sizeof(block_t)) return NULL;
 
     // Get first suited free Block
     block_t * block = firstBloc;
-    while (block != NULL && !(block->alloc == false && block->dataSize > size))
+    while (block != NULL && !(block->alloc == false && block->dataSize > size + sizeof(block_t)))
     {
         block = block->next;
     }
@@ -144,7 +139,7 @@ void * myMalloc(int size)
 
         // 2nd Try
         block = firstBloc;
-        while (block != NULL && !(block->alloc == false && block->dataSize > size))
+        while (block != NULL && !(block->alloc == false && block->dataSize > size + sizeof(block_t)))
         {
             block = block->next;
         }
@@ -168,7 +163,7 @@ void * myMalloc(int size)
 
     // Alloc Block
     block->alloc = true;
-    freeSize = freeSize - size;
+    freeSize = freeSize - (size + sizeof(block_t));
 
     return BLOC_MEM(block);
 }
@@ -184,7 +179,7 @@ void myFree(void * ptr)
 
     // Free the Block
     block->alloc = false;
-    freeSize = freeSize + block->dataSize;
+    freeSize = freeSize + block->dataSize + sizeof(block_t);
     
     // Try to merge aside free Blocks
     mergePrev(block);
@@ -211,26 +206,53 @@ void write(void * ptr, char * str, int len)
 void disp()
 {
     int iBloc = 0;
+    int line = 0;
+    int row = 0;
+    char cha;
     block_t * block = firstBloc;
+    printf("\r\n");
     while (block != NULL)
     {
-        printf("block : %d\r\n", iBloc);
-        printf(" - address : %p\r\n", block);
-        printf(" - alloc : %d\r\n", block->alloc);
-        printf(" - size : %d\r\n", (int) (block->dataSize + sizeof(block_t)));
-        printf(" - dataSize : %d\r\n", block->dataSize);
-        printf(" - prev : %p\r\n", block->prev);
-        printf(" - next : %p\r\n", block->next);
-        if (block->alloc == true)
+        printf(" ====================\r\n");
+        printf(" |     Block %3d    |\r\n", iBloc);
+        printf(" |  %p  |\r\n", block);
+        printf(" | size : %3d (%3d) |\r\n", block->dataSize, (int) (block->dataSize + sizeof(block_t)));
+        if (block->alloc)
         {
-            printf(" - data : [");
-            for (int i = 0; i < block->dataSize; i = i + 1)
+            printf(" |     Allocated    |\r\n");
+        }
+        else
+        {
+            printf(" |       Free       |\r\n");
+        }
+        printf(" |------------------|\r\n");
+        while (line < block->dataSize / 16 + 1)
+        {
+            printf(" | ");
+            row = 0;
+            while (line * 16 + row < block->dataSize && row < 16)
             {
-                printf("%c", *((char *)(BLOC_MEM(block) + i * sizeof(char))));
+                cha = *((char *)(BLOC_MEM(block) + (line * 16 + row) * sizeof(char)));
+                if (cha >= 32 && cha <= 127) printf("%c", cha);
+                else printf(" ");
+                row = row + 1;
             }
-            printf("]\r\n");
+            while (row < 16)
+            {
+                printf(" ");
+                row = row + 1;
+            }
+            printf(" |\r\n");
+            line = line + 1;
+        }
+        printf(" ====================\r\n");
+        if (block->next != NULL)
+        {
+            printf("     |          A\r\n");
+            printf("     V          |\r\n");
         }
         block = block->next;
         iBloc = iBloc + 1;
     }
+    printf("\r\n");
 }
