@@ -5,25 +5,38 @@
 
 int main()
 {
-    char d1[10] = "<---p1--->";
-    char d2[10] = "<---p2--->";
-    char d3[10] = "<---p3--->";
-
+    char * p1;
+    char * p2;
+    char * p3;
+    
     init();
-    disp();
-    
-    char * p1 = myMalloc(10);
-    char * p2 = myMalloc(10);
-    char * p3 = myMalloc(10);
-    disp();
-    
+    p1 = myMalloc(10);
+    p2 = myMalloc(10);
+    p3 = myMalloc(10);
     write(p1, "<===p1===>", 10);
     write(p2, "<===p2===>", 10);
     write(p3, "<===p3===>", 10);
+    myFree(p2);
+    myFree(p3);
     disp();
 
+    myFree(p1);
+    p1 = myMalloc(250);
+    p2 = myMalloc(250);
+    p3 = myMalloc(250);
+    write(p1, "<===p1======", 20);
+    write(p2, "<===p2======", 20);
+    write(p3, "<===p3======", 20);
     myFree(p2);
     disp();
+
+    p2 = myMalloc(300);
+    if (p2 != NULL)
+    {
+        write(p2, "<===p2======", 20);
+    }
+    disp();
+
     /*
     char * p4 = myMalloc(5);
     disp();

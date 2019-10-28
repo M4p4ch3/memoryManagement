@@ -11,13 +11,16 @@ typedef int bool;
 # define true 1
 # define false 0
 
-typedef struct Bloc
+# define BLOC_HEAD(ptr) ((void *)((unsigned long)ptr - sizeof(block_t)))
+# define BLOC_MEM(ptr) ((void *)((unsigned long)ptr + sizeof(block_t)))
+
+typedef struct block_t
 {
     bool alloc;
-    int size;
-    struct Bloc * prev;
-    struct Bloc * next;
-} Bloc;
+    unsigned int dataSize;
+    struct block_t * prev;
+    struct block_t * next;
+} block_t;
 
 // Private
 void init();
