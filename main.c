@@ -5,23 +5,41 @@
 
 int main()
 {
-    char * p[90];
-    
-    init();
+    char str[10] = "<===pi===>";
+    char * p[30];
 
     p[0] = myMalloc(10);
-    write(p[0], "<===pi===>", 10);
+    str[5] = '0';
+    write(p[0], str, 10);
     p[1] = myMalloc(10);
-    write(p[1], "<===pi===>", 10);
+    str[5] = '1';
+    write(p[1], str, 10);
+    p[2] = myMalloc(10);
+    str[5] = '2';
+    write(p[2], str, 10);
+    p[3] = myMalloc(10);
+    str[5] = '3';
+    write(p[3], str, 10);
+    p[4] = myMalloc(10);
+    str[5] = '4';
+    write(p[4], str, 10);
+    myFree(p[1]);
+    myFree(p[3]);
     disp();
 
+    defrag();
+    disp();
+
+
+    
     /*
     for (int i = 0; i < 30; i = i + 1)
     {
         p[i] = myMalloc(10);
-        write(p[i], "<===pi===>", 10);
+        printf("p[%d] : %p\r\n", i, p[i]);
+        str[5] = (char) (i + 65);
+        write(p[i], str, 10);
     }
-    disp();
     //*/
 
     /*
@@ -29,42 +47,8 @@ int main()
     {
         myFree(p[i]);
     }
-    //*/
-
-    /*
-    disp();
-    p[89] = myMalloc(40);
     disp();
     //*/
-
-    /*
-    char * p4 = myMalloc(5);
-    disp();
-
-    write(p4, 5, "<p4->");
-    disp();
-
-    // defrag();
-    disp();
-    /*
-    
-    int p5 = myMalloc(2);
-    disp();
-
-    myFree(p4);
-    disp();
-    
-    myFree(p5);
-    disp();
-
-    int p6 = myMalloc(5);
-    disp();
-
-    myFree(p6);
-    disp();
-
-    defrag();
-    disp();
 
     //*/
     return 0;
