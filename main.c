@@ -3,14 +3,29 @@
 
 # include "mem.h"
 
+void write(void * ptr, char * str, int len)
+{
+    // Null Pointer
+    if (ptr == NULL) return;
+    // No data
+    if (str == NULL || len <= 0) return;
+
+    for (int i = 0; i < len; i = i + 1)
+    {
+        *((char *)(ptr + i * sizeof(char))) = str[i];
+    }
+}
+
 int main()
 {
     char str[10] = "<===pi===>";
     char * p[30];
 
-    p[0] = myMalloc(10);
+    p[0] = myMalloc(932);
     str[5] = '0';
     write(p[0], str, 10);
+    disp();
+    /*
     p[1] = myMalloc(10);
     str[5] = '1';
     write(p[1], str, 10);

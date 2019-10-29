@@ -35,20 +35,6 @@ block_t * getBloc(void * ptr)
     return block;
 }
 
-void insert(block_t * block, block_t * prev, block_t * next)
-{
-    block->prev = prev;
-    block->next = next;
-    if (prev != NULL)
-    {
-        prev->next = block;
-    }
-    if (next != NULL)
-    {
-        next->prev = block;
-    }
-}
-
 void mergeNext(block_t * block)
 {
     // Null Block
@@ -65,8 +51,27 @@ void mergeNext(block_t * block)
             block->next->next->prev = block;
         }
         block->next = block->next->next;
+        // Update global free Size
         freeSize = freeSize + sizeof(block_t);
     }
+}
+
+void split(block_t * block, size_t size)
+{
+    block_t * newFreeBlock = BLOC_MEM(block) + size;
+    newFreeBlock->alloc = false;
+    newFreeBlock->dataSize = block->dataSize - size - sizeof(block_t);
+    newFreeBlock->prev = block;
+    newFreeBlock->next = block->next;
+
+    block->dataSize = size;
+    if (block->next != NULL)
+    {
+        block->next->prev = newFreeBlock;
+    }
+    block->next = newFreeBlock;
+
+    freeSize = freeSize + newFreeBlock->dataSize;
 }
 
 void defrag()
@@ -133,11 +138,11 @@ void * myMalloc(int size)
     if (!bInit) init();
 
     // Not enough free Size
-    if (freeSize < size + sizeof(block_t)) return NULL;
+    if (freeSize < size) return NULL;
 
     // Get first suited free Block
     block_t * block = firstBloc;
-    while (block != NULL && !(block->alloc == false && block->dataSize > size + sizeof(block_t)))
+    while (block != NULL && !(block->alloc == false && block->dataSize >= size))
     {
         block = block->next;
     }
@@ -152,7 +157,7 @@ void * myMalloc(int size)
 
         // 2nd Try
         block = firstBloc;
-        while (block != NULL && !(block->alloc == false && block->dataSize > size + sizeof(block_t)))
+        while (block != NULL && !(block->alloc == false && block->dataSize >= size))
         {
             block = block->next;
         }
@@ -161,22 +166,17 @@ void * myMalloc(int size)
     }
     //*/
 
-    // Still some place in Free Block
-    if (block->dataSize > size)
-    {
-        // Create new free Block
-        block_t * newFreeBloc = BLOC_MEM(block) + size;
-        newFreeBloc->alloc = false;
-        newFreeBloc->dataSize = block->dataSize - (size + sizeof(block_t));
-
-        insert(newFreeBloc, block, block->next);
-
-        block->dataSize = size;
-    }
-
     // Alloc Block
     block->alloc = true;
-    freeSize = freeSize - (size + sizeof(block_t));
+    // Update global free Size
+    freeSize = freeSize - block->dataSize;
+
+    // Enough Place for a new minimal Free Block
+    if (block->dataSize >= size + sizeof(block_t) + MIN_BLOC_DATA_SIZE)
+    {
+        // Split Block
+        split(block, size);
+    }
 
     return BLOC_MEM(block);
 }
@@ -192,6 +192,7 @@ void myFree(void * ptr)
 
     // Free the Block
     block->alloc = false;
+    // Update global free Size
     freeSize = freeSize + block->dataSize;
     
     // Try to merge aside free Blocks
@@ -202,28 +203,6 @@ void myFree(void * ptr)
     if (block->prev != NULL && block->prev->alloc == false)
     {
         mergeNext(block->prev);
-    }
-}
-
-void write(void * ptr, char * str, int len)
-{
-    // Null Pointer
-    if (ptr == NULL) return;
-    // No data
-    if (str == NULL || len <= 0) return;
-
-    // Find alloc Block
-    block_t * block = getBloc(BLOC_HEAD(ptr));
-    // Alloc Block not found
-    if (block == NULL) return;
-    // block_t is not allocated
-    if (block->alloc == false) return;
-    // To long Message
-    if (len > block->dataSize) return;
-
-    for (int i = 0; i < len; i = i + 1)
-    {
-        *((char *)(ptr + i * sizeof(char))) = str[i];
     }
 }
 
@@ -253,7 +232,7 @@ void disp()
 
         printf(" |  ");
         for (int i = 0; i < (DISP_LINE_LEN - sizeof("size : 000 (000)")) / 2; i = i + 1) printf(" ");
-        printf("size : %3d (%3d)", block->dataSize, (int) (block->dataSize + sizeof(block_t)));
+        printf("size : %3d (%3d)", (int) block->dataSize, (int) (block->dataSize + sizeof(block_t)));
         for (int i = 0; i < (DISP_LINE_LEN - sizeof("size : 000 (000)")) / 2; i = i + 1) printf(" ");
         printf("  |\r\n");
 
@@ -333,6 +312,6 @@ void disp()
     }
     printf("\r\n");
     printf(" Free Size : %d\r\n", freeSize);
-    printf(" Sum of Free Blokcs Sizes : %d\r\n", freeSizeSum);
+    printf(" Sum of Free Blocks Sizes : %d\r\n", freeSizeSum);
     printf("\r\n");
 }

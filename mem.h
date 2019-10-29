@@ -6,6 +6,7 @@
 # include <stdio.h>
 
 # define TOTAL_SIZE 1000
+# define MIN_BLOC_DATA_SIZE 5
 # define DISP_LINE_LEN 50
 
 # define RES "\x1B[0m"
@@ -27,20 +28,15 @@ typedef int bool;
 typedef struct block_t
 {
     bool alloc;
-    unsigned int dataSize;
+    size_t dataSize;
     struct block_t * prev;
     struct block_t * next;
 } block_t;
 
-// Private
-void init();
-void defrag();
-
-// Public
 void * myMalloc(int size);
 void myFree(void * address);
-void write(void * address, char * str, int len);
-void myMemCpy(void * src, void * dest, int len);
 void disp();
+void init();
+void defrag();
 
 # endif // # if (!(defined(MEM_H)))
