@@ -21,11 +21,9 @@ int main()
     char str[10] = "<===pi===>";
     char * p[30];
 
-    p[0] = myMalloc(932);
+    p[0] = myMalloc(10);
     str[5] = '0';
     write(p[0], str, 10);
-    disp();
-    /*
     p[1] = myMalloc(10);
     str[5] = '1';
     write(p[1], str, 10);

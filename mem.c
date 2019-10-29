@@ -76,7 +76,7 @@ void split(block_t * block, size_t size)
 
 void defrag()
 {
-    // size_t dataSize;
+    size_t dataSize;
     block_t * block = firstBloc;
     block_t * newFreeBloc;
     
@@ -91,41 +91,29 @@ void defrag()
 
         if (block->next != NULL)
         {
-            // block is free
-            // block->next is alloc
-            // "Switch" block and block->next
-            // "Switch" free and alloc Block
-
+            // Update global free Size
+            freeSize = freeSize - block->dataSize;
+            // Data Size of next alloc Block
+            dataSize = block->next->dataSize;
             // Copy Data from next alloc Block to temp Memory
-            myMemCpy(BLOC_MEM(block->next), tempMemory, block->next->dataSize);
-            // dataSize = block->next->dataSize;
+            myMemCpy(BLOC_MEM(block->next), tempMemory, dataSize);
 
-            // Alloc free Block
+            // Merge free Block and next alloc Block
             block->alloc = true;
+            block->dataSize = block->dataSize + sizeof(block_t) + block->next->dataSize;
+            block->next->next->prev = block;
+            block->next = block->next->next;
 
-            // Create new free Block
-            // Address : block Memory + dataSize of next alloc Bloc
-            newFreeBloc = BLOC_MEM(block) + block->next->dataSize;
-            newFreeBloc->alloc = false;
-            // Size of the former free Block
-            newFreeBloc->dataSize = block->dataSize;
-
-            // Update Size to match next alloc Block Size
-            block->dataSize = block->next->dataSize;
-
-            // Update links
-            newFreeBloc->next = block->next->next;
-            block->next->next->prev = newFreeBloc;
-            newFreeBloc->prev = block;
-            block->next = newFreeBloc;
+            // Split merged Block
+            split(block, dataSize);
 
             // Copy Data from temp Memory to alloc Block
             myMemCpy(tempMemory, BLOC_MEM(block), block->dataSize);
 
             // Try to merge new free Block with next Block
-            if (newFreeBloc->next != NULL && newFreeBloc->next->alloc == false)
+            if (block->next != NULL && block->next->next != NULL && block->next->next->alloc == false)
             {
-                mergeNext(newFreeBloc);
+                mergeNext(block->next);
             }
         }
 
