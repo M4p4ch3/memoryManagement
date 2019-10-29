@@ -25,11 +25,16 @@ typedef int bool;
 # define BLOC_HEAD(ptr) ((void *)((unsigned long)ptr - sizeof(block_t)))
 # define BLOC_MEM(ptr) ((void *)((unsigned long)ptr + sizeof(block_t)))
 
+// Memory Block
 typedef struct block_t
 {
+    // Block Allocation State
     bool alloc;
+    // Data Size
     size_t dataSize;
+    // Prev Block
     struct block_t * prev;
+    // Next Block
     struct block_t * next;
 } block_t;
 
