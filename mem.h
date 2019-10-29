@@ -6,7 +6,7 @@
 # include <stdio.h>
 
 # define TOTAL_SIZE 1000
-# define DISP_LINE_LEN 20
+# define DISP_LINE_LEN 50
 
 # define RES "\x1B[0m"
 # define RED "\x1B[31m"

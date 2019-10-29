@@ -229,6 +229,7 @@ void write(void * ptr, char * str, int len)
 
 void disp()
 {
+    int i = 0;
     int iBloc = 0;
     int line = 0;
     int row = 0;
@@ -240,19 +241,42 @@ void disp()
     block = firstBloc;
     while (block != NULL)
     {
-        printf(" ======================== %p\r\n", block);
-        printf(" |       Block %3d      |\r\n", iBloc);
-        printf(" |   size : %3d (%3d)   |\r\n", block->dataSize, (int) (block->dataSize + sizeof(block_t)));
+        printf(" ==");
+        for (i = 0; i < DISP_LINE_LEN; i = i + 1) printf("=");
+        printf("== %p\r\n", block);
+
+        printf(" | ");
+        for (i = 0; i < (DISP_LINE_LEN - sizeof("Block 000")) / 2; i = i + 1) printf(" ");
+        printf("Block %3d", iBloc);
+        for (i = 0; i < (DISP_LINE_LEN - sizeof("Block 000")) / 2; i = i + 1) printf(" ");
+        printf("  |\r\n");
+
+        printf(" |  ");
+        for (int i = 0; i < (DISP_LINE_LEN - sizeof("size : 000 (000)")) / 2; i = i + 1) printf(" ");
+        printf("size : %3d (%3d)", block->dataSize, (int) (block->dataSize + sizeof(block_t)));
+        for (int i = 0; i < (DISP_LINE_LEN - sizeof("size : 000 (000)")) / 2; i = i + 1) printf(" ");
+        printf("  |\r\n");
+
+        printf(" |  ");
         if (block->alloc)
         {
-            printf(" |       %sAllocated%s      |\r\n", RED, RES);
+            for (int i = 0; i < (DISP_LINE_LEN - sizeof("Allocated")) / 2; i = i + 1) printf(" ");
+            printf("%sAllocated%s", RED, RES);
+            for (int i = 0; i < (DISP_LINE_LEN - sizeof("Allocated")) / 2; i = i + 1) printf(" ");
         }
         else
         {
-            printf(" |         %sFree%s         |\r\n", GRN, RES);
+            for (int i = 0; i < (DISP_LINE_LEN - sizeof("Free")) / 2; i = i + 1) printf(" ");
+            printf("%sFree %s", GRN, RES);
+            for (int i = 0; i < (DISP_LINE_LEN - sizeof("Free")) / 2; i = i + 1) printf(" ");
             freeSizeSum = freeSizeSum + block->dataSize;
         }
-        printf(" |----------------------| %p\r\n", BLOC_MEM(block));
+        printf(" |\r\n");
+
+        printf(" |-");
+        for (int i = 0; i < DISP_LINE_LEN; i = i + 1) printf("-");
+        printf("-| %p\r\n", BLOC_MEM(block));
+
         line = 0;
         row = 0;
         while (line * DISP_LINE_LEN + row < block->dataSize)
@@ -285,12 +309,25 @@ void disp()
             line = line + 1;
             row = 0;
         }
-        printf(" ======================== %p\r\n", (void *)((unsigned long) BLOC_MEM(block) + block->dataSize));
+
+        printf(" ==");
+        for (int i = 0; i < DISP_LINE_LEN; i = i + 1) printf("=");
+        printf("== %p\r\n", (void *)((unsigned long) BLOC_MEM(block) + block->dataSize));
+
         if (block->next != NULL)
         {
-            printf("     |              A\r\n");
-            printf("     V              |\r\n");
+            printf("   ");
+            for (int i = 0; i < DISP_LINE_LEN / 4; i = i + 1) printf(" ");
+            printf("|");
+            for (int i = 0; i < DISP_LINE_LEN / 2; i = i + 1) printf(" ");
+            printf("A\r\n");
+            printf("   ");
+            for (int i = 0; i < DISP_LINE_LEN / 4; i = i + 1) printf(" ");
+            printf("V");
+            for (int i = 0; i < DISP_LINE_LEN / 2; i = i + 1) printf(" ");
+            printf("|\r\n");
         }
+
         block = block->next;
         iBloc = iBloc + 1;
     }
