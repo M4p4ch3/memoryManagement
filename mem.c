@@ -1,22 +1,39 @@
 
 # include "mem.h"
 
+// Memory Initialization State
 bool bInit = false;
-int freeSize = TOTAL_SIZE - sizeof(block_t);
+// Global free Size in Memory Space
+int freeSize;
+// Memory Space
 char memory[TOTAL_SIZE];
+// Temp Memory Space
 char tempMemory[TOTAL_SIZE / 10];
+// First Memory Block
 block_t * firstBloc = NULL;
 
+// Get Size of 'block' used in Memory
+size_t getMemSize(block_t * block)
+{
+    return sizeof(block_t) + block->dataSize;
+}
+
+// Inititalize Memory Space
 void init()
 {
+    // Instantiate first Memory Block
     firstBloc = (block_t *) &memory[0];
     firstBloc->alloc = false;
     firstBloc->dataSize = TOTAL_SIZE - sizeof(block_t);
     firstBloc->prev = NULL;
     firstBloc->next = NULL;
+    // Initizalize global free Size
+    freeSize = TOTAL_SIZE - sizeof(block_t);
+    // Memory initialized
     bInit = true;
 }
 
+// Copy 'len' from 'src' to 'dest'
 void myMemCpy(void * src, void * dest, int len)
 {
     for (int i = 0; i < len; i = i + 1)
@@ -25,9 +42,13 @@ void myMemCpy(void * src, void * dest, int len)
     }
 }
 
+// Get Block addressed by 'ptr'
 block_t * getBloc(void * ptr)
 {
-    block_t * block = firstBloc;
+    // Block addressed by 'ptr'
+    block_t * block = NULL;
+    
+    block = firstBloc;
     while (block != NULL && !(block == ptr))
     {
         block = block->next;
@@ -35,6 +56,7 @@ block_t * getBloc(void * ptr)
     return block;
 }
 
+// Merge 'block' with next Block
 void mergeNext(block_t * block)
 {
     // Null Block
@@ -45,7 +67,9 @@ void mergeNext(block_t * block)
     // If next Block is free
     if (block->next != NULL && block->next->alloc == false)
     {
-        block->dataSize = block->dataSize + block->next->dataSize + sizeof(block_t);
+        // Increase Block Size
+        block->dataSize = block->dataSize + getMemSize(block->next);
+        // Update Links
         if (block->next->next != NULL)
         {
             block->next->next->prev = block;
@@ -56,15 +80,29 @@ void mergeNext(block_t * block)
     }
 }
 
+// Split 'block' (alloc) into alloc Block of size 'size' and free Block
 void split(block_t * block, size_t size)
 {
-    block_t * newFreeBlock = BLOC_MEM(block) + size;
+    // Null Block Pointer
+    if (block == NULL) return;
+    // Invalid Size
+    if (size <= 0) return;
+    
+    // New free Block
+    block_t * newFreeBlock = NULL;
+    
+    // Create new free Block
+    newFreeBlock = BLOC_MEM(block) + size;
     newFreeBlock->alloc = false;
-    newFreeBlock->dataSize = block->dataSize - size - sizeof(block_t);
+    newFreeBlock->dataSize = block->dataSize - (sizeof(block_t) + size);
+    // Update links
     newFreeBlock->prev = block;
     newFreeBlock->next = block->next;
 
+    // Reduce block Size to requested
     block->dataSize = size;
+
+    // Update links
     if (block->next != NULL)
     {
         block->next->prev = newFreeBlock;
@@ -74,12 +112,17 @@ void split(block_t * block, size_t size)
     freeSize = freeSize + newFreeBlock->dataSize;
 }
 
+// Merge all free Blocks
 void defrag()
 {
-    size_t dataSize;
+    // Alloc Block Data Size
+    size_t dataSize = 0;
+    // Merge of free and alloc
     block_t * block = firstBloc;
-    block_t * newFreeBloc;
+    // New free Block
+    block_t * newFreeBloc = NULL;
     
+    block = firstBloc;
     while (block != NULL)
     {
         // Look for free Block followed by alloc Block
@@ -93,14 +136,14 @@ void defrag()
         {
             // Update global free Size
             freeSize = freeSize - block->dataSize;
-            // Data Size of next alloc Block
+            // Save alloc Block Data Size
             dataSize = block->next->dataSize;
             // Copy Data from next alloc Block to temp Memory
             myMemCpy(BLOC_MEM(block->next), tempMemory, dataSize);
 
             // Merge free Block and next alloc Block
             block->alloc = true;
-            block->dataSize = block->dataSize + sizeof(block_t) + block->next->dataSize;
+            block->dataSize = block->dataSize + getMemSize(block->next);
             block->next->next->prev = block;
             block->next = block->next->next;
 
@@ -121,6 +164,7 @@ void defrag()
     }
 }
 
+// Allocate a Memory Space of size 'size'
 void * myMalloc(int size)
 {
     if (!bInit) init();
@@ -128,8 +172,12 @@ void * myMalloc(int size)
     // Not enough free Size
     if (freeSize < size) return NULL;
 
+    // First suited free Block to alloc
+    block_t * block = NULL;
+
     // Get first suited free Block
-    block_t * block = firstBloc;
+    // 1st Try
+    block = firstBloc;
     while (block != NULL && !(block->alloc == false && block->dataSize >= size))
     {
         block = block->next;
@@ -143,6 +191,7 @@ void * myMalloc(int size)
         // Defragment Memory
         defrag();
 
+        // Get first suited free Block
         // 2nd Try
         block = firstBloc;
         while (block != NULL && !(block->alloc == false && block->dataSize >= size))
@@ -169,10 +218,17 @@ void * myMalloc(int size)
     return BLOC_MEM(block);
 }
 
+// Free a Memory Space pointed addressed by 'ptr'
 void myFree(void * ptr)
 {
+    // Null Pointer
+    if (ptr == NULL) return;
+
+    // Alloc Block addressed by 'ptr'
+    block_t * block = NULL;
+
     // Find alloc Block
-    block_t * block = getBloc(BLOC_HEAD(ptr));
+    block = getBloc(BLOC_HEAD(ptr));
     // Alloc Block not found
     if (block == NULL) return;
     // block_t is not allocated
@@ -194,6 +250,7 @@ void myFree(void * ptr)
     }
 }
 
+// Display all Memory Blocks
 void disp()
 {
     int i = 0;
@@ -220,7 +277,7 @@ void disp()
 
         printf(" |  ");
         for (int i = 0; i < (DISP_LINE_LEN - sizeof("size : 000 (000)")) / 2; i = i + 1) printf(" ");
-        printf("size : %3d (%3d)", (int) block->dataSize, (int) (block->dataSize + sizeof(block_t)));
+        printf("size : %3d (%3d)", (int) block->dataSize, (int) (getMemSize(block)));
         for (int i = 0; i < (DISP_LINE_LEN - sizeof("size : 000 (000)")) / 2; i = i + 1) printf(" ");
         printf("  |\r\n");
 
