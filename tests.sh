@@ -10,6 +10,12 @@ for test in $tests; do
     out="./tests/$test/out.txt"
     exp="./tests/$test/exp.txt"
     ./env.out < $in > $out
+    
+    echo "    output"
+    sed -n l $out
+    echo "    expected"
+    sed -n l $exp
+    
     if cmp -s "$exp" "$out"; then
         echo "  passed"
     else
