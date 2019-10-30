@@ -1,4 +1,6 @@
 language: c
 compiler: gcc
-install: make
-script: ./a.out
+# install: make
+script:
+- make
+- ./a.out
