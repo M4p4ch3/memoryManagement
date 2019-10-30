@@ -15,6 +15,10 @@ for test in $tests; do
     else
         echo "  failed"
         failed=1
+        echo "    output"
+        sed -n l $out
+        echo "    expected"
+        sed -n l $exp
     fi
 done
 
