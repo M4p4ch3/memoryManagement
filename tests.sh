@@ -2,6 +2,7 @@
 #!/bin/bash
 
 tests="min malloc10"
+failed=0
 
 for test in $tests; do
     echo "$test"
@@ -13,5 +14,8 @@ for test in $tests; do
         echo "  passed"
     else
         echo "  failed"
+        failed=1
     fi
 done
+
+exit $failed
