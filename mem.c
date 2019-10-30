@@ -250,8 +250,38 @@ void myFree(void * ptr)
     }
 }
 
-// Display all Memory Blocks
 void disp()
+{
+    if (!bInit) init();
+
+    int iBloc = 0;
+    int freeSizeSum = 0;
+    block_t * block = NULL;
+    
+    block = firstBloc;
+    while (block != NULL)
+    {
+        printf("%d\n", iBloc);
+        printf("%d\n", (int) block->dataSize);
+        printf("%d\n", (int) (getMemSize(block)));
+        if (block->alloc)
+        {
+            printf("alloc\n");
+        }
+        else
+        {
+            printf("free\n");
+            freeSizeSum = freeSizeSum + block->dataSize;
+        }
+        block = block->next;
+        iBloc = iBloc + 1;
+    }
+    printf("%d\n", freeSize);
+    printf("%d\n", freeSizeSum);
+}
+
+// Display all Memory Blocks
+void prettyDisp()
 {
     int i = 0;
     int iBloc = 0;

@@ -2,5 +2,7 @@ language: c
 compiler: gcc
 # install: make
 script:
-- make
-- ./a.out
+- make mem.o
+- make env.out
+- make clean
+- ./tests.sh

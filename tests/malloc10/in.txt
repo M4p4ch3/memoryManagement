@@ -1,0 +1,4 @@
+malloc
+10
+disp
+-1

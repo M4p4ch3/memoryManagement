@@ -41,7 +41,6 @@ typedef struct block_t
 void * myMalloc(int size);
 void myFree(void * address);
 void disp();
-void init();
-void defrag();
+void prettyDisp();
 
 # endif // # if (!(defined(MEM_H)))
