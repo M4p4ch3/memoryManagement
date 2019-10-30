@@ -123,6 +123,7 @@ void split(block_t * block, size_t size)
     freeSize = freeSize + newFreeBlock->dataSize;
 }
 
+/*
 // Merge all free Blocks
 // Problem : Block Pointer changes
 void defrag()
@@ -175,35 +176,35 @@ void defrag()
         block = block->next;
     }
 }
+//*/
 
-// Allocate a Memory Space of size 'size'
-void * myMalloc(int size)
+// Get first free Block larger than 'size'
+block_t * getFirstFit(int size)
 {
-    if (!bInit) init();
-
+    // Invalid size
+    if (size <= 0) return NULL;
     // Not enough free Size
     if (freeSize < size) return NULL;
-
+    
     // First suited free Block to alloc
     block_t * block = NULL;
 
-    // Get first suited free Block
-    // 1st Try
+    // While (Block not (free and large enough))
     block = firstBloc;
     while (block != NULL && !(block->alloc == false && block->dataSize >= size))
     {
         block = block->next;
     }
+
+    /*
     // No free Block found
-    if (block == NULL) // return NULL;
-    //*
+    if (block == NULL)
     {
         // Failed to find suited free Block
         // But enough free Size
         // Defragment Memory
         defrag();
 
-        // Get first suited free Block
         // 2nd Try
         block = firstBloc;
         while (block != NULL && !(block->alloc == false && block->dataSize >= size))
@@ -215,8 +216,70 @@ void * myMalloc(int size)
     }
     //*/
 
+    // First suited free Block or NULL
+    return block;
+}
+
+// Get smallest free Block larger than 'size'
+block_t * getBestFit(int size)
+{
+    // Invalid size
+    if (size <= 0) return NULL;
+    // Not enough free Size
+    if (freeSize < size) return NULL;
+    
+    // Block to iterate over List
+    block_t * block = NULL;
+    // Best suited free Block to alloc
+    block_t * bestBlock = NULL;
+
+    // Scan all Blocks while not perfect Match
+    block = firstBloc;
+    while (block != NULL && !(bestBlock != NULL && bestBlock->dataSize == size))
+    {
+        // If Block suited
+        if (block->alloc == false && block->dataSize >= size)
+        {
+            // First or better suited Block
+            if (bestBlock == NULL || block->dataSize < bestBlock->dataSize)
+            {
+                bestBlock = block;
+            }
+        }
+        block = block->next;
+    }
+
+    // Best suited free Block or NULL
+    return bestBlock;
+}
+
+// Allocate a Memory Space of size 'size'
+void * myMalloc(int size)
+{
+    if (!bInit) init();
+
+    // Invalid size
+    if (size <= 0) return NULL;
+    // Not enough free Size
+    if (freeSize < size) return NULL;
+
+    // Free Block to alloc
+    block_t * block = NULL;
+
+    // Increase requested Size to minimal Size
+    if (size < MIN_BLOC_DATA_SIZE)
+    {
+        size = MIN_BLOC_DATA_SIZE;
+    }
+
+    // Get first suited free Block
+    // block = getFirstFit(size);
+    // Get best suited free Block
+    block = getBestFit(size);
+
+    if (block == NULL) return NULL;
+
     // Alloc Block
-    setID(block);
     block->alloc = true;
     // Update global free Size
     freeSize = freeSize - block->dataSize;
@@ -330,33 +393,21 @@ void prettyDisp()
         for (i = 0; i < DISP_LINE_LEN; i = i + 1) printf("=");
         printf("== %p\r\n", block);
 
-        printf(" | ");
-        for (i = 0; i < (DISP_LINE_LEN - sizeof("Block 000")) / 2; i = i + 1) printf(" ");
-        printf("Block %3d", block->id);
-        for (i = 0; i < (DISP_LINE_LEN - sizeof("Block 000")) / 2; i = i + 1) printf(" ");
-        printf("  |\r\n");
-
-        printf(" |  ");
-        for (int i = 0; i < (DISP_LINE_LEN - sizeof("size : 000 (000)")) / 2; i = i + 1) printf(" ");
-        printf("size : %3d (%3d)", (int) block->dataSize, (int) (getMemSize(block)));
-        for (int i = 0; i < (DISP_LINE_LEN - sizeof("size : 000 (000)")) / 2; i = i + 1) printf(" ");
-        printf("  |\r\n");
-
-        printf(" |  ");
+        printf(" | ID : %3d", block->id);
+        for (i = sizeof("ID : 000"); i < DISP_LINE_LEN + 2; i = i + 1) printf(" ");
+        printf("|       %d\r\n", (int) getMemSize(block));
+        printf(" | alloc : ");
         if (block->alloc)
         {
-            for (int i = 0; i < (DISP_LINE_LEN - sizeof("Allocated")) / 2; i = i + 1) printf(" ");
-            printf("%sAllocated%s", RED, RES);
-            for (int i = 0; i < (DISP_LINE_LEN - sizeof("Allocated")) / 2; i = i + 1) printf(" ");
+            printf("%sAllocated", RED);
         }
         else
         {
-            for (int i = 0; i < (DISP_LINE_LEN - sizeof("Free")) / 2; i = i + 1) printf(" ");
-            printf("%sFree %s", GRN, RES);
-            for (int i = 0; i < (DISP_LINE_LEN - sizeof("Free")) / 2; i = i + 1) printf(" ");
+            printf("%sFree     ", GRN);
             freeSizeSum = freeSizeSum + block->dataSize;
         }
-        printf(" |\r\n");
+        for (i = sizeof("alloc : Allocated"); i < DISP_LINE_LEN + 2; i = i + 1) printf(" ");
+        printf("%s|\r\n", RES);
 
         printf(" |-");
         for (int i = 0; i < DISP_LINE_LEN; i = i + 1) printf("-");
@@ -390,7 +441,12 @@ void prettyDisp()
                 printf(" ");
                 row = row + 1;
             }
-            printf("|\r\n");
+            printf("|");
+            if (line == 0)
+            {
+                printf("       %d", (int) block->dataSize);
+            }
+            printf("\r\n");
             line = line + 1;
             row = 0;
         }
