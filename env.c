@@ -39,7 +39,7 @@ int main()
         else if (strcmp(str, "free") == 0)
         {
             scanf("%d", &reqID);
-            myFree(ptr[reqID]);
+            myFree(getPtr(reqID));
         }
         else if (strcmp(str, "disp") == 0)
         {

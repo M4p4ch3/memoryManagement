@@ -1,6 +1,8 @@
 
 # include "mem.h"
 
+// Global ID
+int id;
 // Memory Initialization State
 bool bInit = false;
 // Global free Size in Memory Space
@@ -18,11 +20,19 @@ size_t getMemSize(block_t * block)
     return sizeof(block_t) + block->dataSize;
 }
 
+void setID(block_t * block)
+{
+    block->id = id;
+    id = id + 1;
+}
+
 // Inititalize Memory Space
 void init()
 {
+    id = 0;
     // Instantiate first Memory Block
     firstBloc = (block_t *) &memory[0];
+    setID(firstBloc);
     firstBloc->alloc = false;
     firstBloc->dataSize = TOTAL_SIZE - sizeof(block_t);
     firstBloc->prev = NULL;
@@ -93,6 +103,7 @@ void split(block_t * block, size_t size)
     
     // Create new free Block
     newFreeBlock = BLOC_MEM(block) + size;
+    setID(newFreeBlock);
     newFreeBlock->alloc = false;
     newFreeBlock->dataSize = block->dataSize - (sizeof(block_t) + size);
     // Update links
@@ -113,6 +124,7 @@ void split(block_t * block, size_t size)
 }
 
 // Merge all free Blocks
+// Problem : Block Pointer changes
 void defrag()
 {
     // Alloc Block Data Size
@@ -204,6 +216,7 @@ void * myMalloc(int size)
     //*/
 
     // Alloc Block
+    setID(block);
     block->alloc = true;
     // Update global free Size
     freeSize = freeSize - block->dataSize;
@@ -250,18 +263,38 @@ void myFree(void * ptr)
     }
 }
 
+// Get Pointer of Block with id 'id'
+void * getPtr(int id)
+{
+    // Invalid id
+    if (id <= 0) return NULL;
+    
+    // Block with id 'id'
+    block_t * block = NULL;
+    
+    block = firstBloc;
+    while (block != NULL && !(block->id == id))
+    {
+        block = block->next;
+    }
+    if (block != NULL)
+    {
+        return BLOC_MEM(block);
+    }
+    return NULL;
+}
+
 void disp()
 {
     if (!bInit) init();
 
-    int iBloc = 0;
     int freeSizeSum = 0;
     block_t * block = NULL;
     
     block = firstBloc;
     while (block != NULL)
     {
-        printf("%d\n", iBloc);
+        printf("%d\n", block->id);
         printf("%d\n", (int) block->dataSize);
         printf("%d\n", (int) (getMemSize(block)));
         if (block->alloc)
@@ -274,7 +307,6 @@ void disp()
             freeSizeSum = freeSizeSum + block->dataSize;
         }
         block = block->next;
-        iBloc = iBloc + 1;
     }
     printf("%d\n", freeSize);
     printf("%d\n", freeSizeSum);
@@ -284,7 +316,6 @@ void disp()
 void prettyDisp()
 {
     int i = 0;
-    int iBloc = 0;
     int line = 0;
     int row = 0;
     int freeSizeSum = 0;
@@ -301,7 +332,7 @@ void prettyDisp()
 
         printf(" | ");
         for (i = 0; i < (DISP_LINE_LEN - sizeof("Block 000")) / 2; i = i + 1) printf(" ");
-        printf("Block %3d", iBloc);
+        printf("Block %3d", block->id);
         for (i = 0; i < (DISP_LINE_LEN - sizeof("Block 000")) / 2; i = i + 1) printf(" ");
         printf("  |\r\n");
 
@@ -383,7 +414,6 @@ void prettyDisp()
         }
 
         block = block->next;
-        iBloc = iBloc + 1;
     }
     printf("\r\n");
     printf(" Free Size : %d\r\n", freeSize);

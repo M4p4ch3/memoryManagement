@@ -28,6 +28,7 @@ typedef int bool;
 // Memory Block
 typedef struct block_t
 {
+    unsigned int id;
     // Block Allocation State
     bool alloc;
     // Data Size
@@ -40,6 +41,7 @@ typedef struct block_t
 
 void * myMalloc(int size);
 void myFree(void * address);
+void * getPtr(int id);
 void disp();
 void prettyDisp();
 
