@@ -20,6 +20,7 @@ size_t getMemSize(block_t * block)
     return sizeof(block_t) + block->dataSize;
 }
 
+// Set 'block' ID according to global ID
 void setID(block_t * block)
 {
     block->id = id;
@@ -29,6 +30,7 @@ void setID(block_t * block)
 // Inititalize Memory Space
 void init()
 {
+    // Initizalize global ID
     id = 0;
     // Instantiate first Memory Block
     firstBloc = (block_t *) &memory[0];
@@ -66,7 +68,7 @@ block_t * getBloc(void * ptr)
     return block;
 }
 
-// Merge 'block' with next Block
+// Merge 'block' with next Block if possible
 void mergeNext(block_t * block)
 {
     // Null Block
@@ -102,7 +104,7 @@ void split(block_t * block, size_t size)
     block_t * newFreeBlock = NULL;
     
     // Create new free Block
-    newFreeBlock = BLOC_MEM(block) + size;
+    newFreeBlock = BLOCK_MEM(block) + size;
     setID(newFreeBlock);
     newFreeBlock->alloc = false;
     newFreeBlock->dataSize = block->dataSize - (sizeof(block_t) + size);
@@ -152,7 +154,7 @@ void defrag()
             // Save alloc Block Data Size
             dataSize = block->next->dataSize;
             // Copy Data from next alloc Block to temp Memory
-            myMemCpy(BLOC_MEM(block->next), tempMemory, dataSize);
+            myMemCpy(BLOCK_MEM(block->next), tempMemory, dataSize);
 
             // Merge free Block and next alloc Block
             block->alloc = true;
@@ -164,7 +166,7 @@ void defrag()
             split(block, dataSize);
 
             // Copy Data from temp Memory to alloc Block
-            myMemCpy(tempMemory, BLOC_MEM(block), block->dataSize);
+            myMemCpy(tempMemory, BLOCK_MEM(block), block->dataSize);
 
             // Try to merge new free Block with next Block
             if (block->next != NULL && block->next->next != NULL && block->next->next->alloc == false)
@@ -267,9 +269,9 @@ void * myMalloc(int size)
     block_t * block = NULL;
 
     // Increase requested Size to minimal Size
-    if (size < MIN_BLOC_DATA_SIZE)
+    if (size < MIN_BLOCK_DATA_SIZE)
     {
-        size = MIN_BLOC_DATA_SIZE;
+        size = MIN_BLOCK_DATA_SIZE;
     }
 
     // Get first suited free Block
@@ -285,13 +287,13 @@ void * myMalloc(int size)
     freeSize = freeSize - block->dataSize;
 
     // Enough Place for a new minimal Free Block
-    if (block->dataSize >= size + sizeof(block_t) + MIN_BLOC_DATA_SIZE)
+    if (block->dataSize >= size + sizeof(block_t) + MIN_BLOCK_DATA_SIZE)
     {
         // Split Block
         split(block, size);
     }
 
-    return BLOC_MEM(block);
+    return BLOCK_MEM(block);
 }
 
 // Free a Memory Space pointed addressed by 'ptr'
@@ -304,7 +306,7 @@ void myFree(void * ptr)
     block_t * block = NULL;
 
     // Find alloc Block
-    block = getBloc(BLOC_HEAD(ptr));
+    block = getBloc(BLOCK_HEAD(ptr));
     // Alloc Block not found
     if (block == NULL) return;
     // block_t is not allocated
@@ -342,7 +344,7 @@ void * getPtr(int id)
     }
     if (block != NULL)
     {
-        return BLOC_MEM(block);
+        return BLOCK_MEM(block);
     }
     return NULL;
 }
@@ -359,7 +361,6 @@ void disp()
     {
         printf("%d\n", block->id);
         printf("%d\n", (int) block->dataSize);
-        printf("%d\n", (int) (getMemSize(block)));
         if (block->alloc)
         {
             printf("alloc\n");
@@ -396,22 +397,23 @@ void prettyDisp()
         printf(" | ID : %3d", block->id);
         for (i = sizeof("ID : 000"); i < DISP_LINE_LEN + 2; i = i + 1) printf(" ");
         printf("|       %d\r\n", (int) getMemSize(block));
+
         printf(" | alloc : ");
         if (block->alloc)
         {
-            printf("%sAllocated", RED);
+            printf("%sAllocated", COLOR_RED);
         }
         else
         {
-            printf("%sFree     ", GRN);
+            printf("%sFree     ", COLOR_GRN);
             freeSizeSum = freeSizeSum + block->dataSize;
         }
         for (i = sizeof("alloc : Allocated"); i < DISP_LINE_LEN + 2; i = i + 1) printf(" ");
-        printf("%s|\r\n", RES);
+        printf("%s|\r\n", COLOR_RES);
 
         printf(" |-");
         for (int i = 0; i < DISP_LINE_LEN; i = i + 1) printf("-");
-        printf("-| %p\r\n", BLOC_MEM(block));
+        printf("-| %p\r\n", BLOCK_MEM(block));
 
         line = 0;
         row = 0;
@@ -421,16 +423,16 @@ void prettyDisp()
             if (line == 0) printf("[");
             else printf(" ");
             row = 0;
-            if (block->alloc == true) printf("%s", RED);
-            else printf("%s", GRN);
+            if (block->alloc == true) printf("%s", COLOR_RED);
+            else printf("%s", COLOR_GRN);
             while (line * DISP_LINE_LEN + row < block->dataSize && row < DISP_LINE_LEN)
             {
-                cha = *((char *)(BLOC_MEM(block) + (line * DISP_LINE_LEN + row) * sizeof(char)));
+                cha = *((char *)(BLOCK_MEM(block) + (line * DISP_LINE_LEN + row) * sizeof(char)));
                 if (cha >= 32 && cha <= 126) printf("%c", cha);
                 else printf("-");
                 row = row + 1;
             }
-            printf("%s", RES);
+            printf("%s", COLOR_RES);
             if (line * DISP_LINE_LEN + row >= block->dataSize)
             {
                 printf("]");
@@ -453,7 +455,7 @@ void prettyDisp()
 
         printf(" ==");
         for (int i = 0; i < DISP_LINE_LEN; i = i + 1) printf("=");
-        printf("== %p\r\n", (void *)((unsigned long) BLOC_MEM(block) + block->dataSize));
+        printf("== %p\r\n", (void *)((unsigned long) BLOCK_MEM(block) + block->dataSize));
 
         if (block->next != NULL)
         {
